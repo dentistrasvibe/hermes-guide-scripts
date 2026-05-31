@@ -57,3 +57,24 @@ setup() {
   a="$(gen_panel_password)"; b="$(gen_panel_password)"
   [ "$a" != "$b" ]
 }
+
+@test "provider_config_commands: openai-codex sets provider only" {
+  run provider_config_commands "openai-codex"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"config set model.provider openai-codex"* ]]
+}
+
+@test "provider_config_commands: custom sets provider, base_url, default" {
+  CUSTOM_BASE_URL="https://x/v1" CUSTOM_MODEL="m1" run provider_config_commands "custom"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"config set model.provider custom"* ]]
+  [[ "$output" == *"config set model.base_url https://x/v1"* ]]
+  [[ "$output" == *"config set model.default m1"* ]]
+}
+
+@test "provider_config_commands: openrouter sets provider and default" {
+  OPENROUTER_MODEL="anthropic/claude-opus-4.6" run provider_config_commands "openrouter"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"config set model.provider openrouter"* ]]
+  [[ "$output" == *"config set model.default anthropic/claude-opus-4.6"* ]]
+}

@@ -54,3 +54,26 @@ gen_panel_password() {
   LC_ALL=C tr -dc 'A-Za-z0-9_-' < /dev/urandom | head -c 24
   printf '\n'
 }
+
+# provider_config_commands <provider>
+# Emits the `hermes config set ...` argument strings (one per line) for the
+# given provider. API keys are NOT set here — they go into ~/.hermes/.env.
+# NOTE: model key is `model.default` per research; Task 9 live-verifies vs `model.model`.
+provider_config_commands() {
+  local provider="$1"
+  case "$provider" in
+    openai-codex)
+      printf 'config set model.provider openai-codex\n'
+      ;;
+    openrouter)
+      printf 'config set model.provider openrouter\n'
+      [ -n "${OPENROUTER_MODEL:-}" ] && printf 'config set model.default %s\n' "$OPENROUTER_MODEL"
+      ;;
+    custom)
+      printf 'config set model.provider custom\n'
+      printf 'config set model.base_url %s\n' "${CUSTOM_BASE_URL:?}"
+      printf 'config set model.default %s\n' "${CUSTOM_MODEL:?}"
+      ;;
+    *) printf 'unknown provider: %s\n' "$provider" >&2; return 1 ;;
+  esac
+}
