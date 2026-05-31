@@ -76,12 +76,9 @@ if ! command -v apt-get >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ ! -e "$TTY" ]; then
-  err "Нет доступа к терминалу (/dev/tty) — скрипту нужно задать тебе вопросы."
-  err "Скачай его и запусти из файла:"
-  err "  curl -fsSL <URL> -o setup-hermes-web.sh && bash setup-hermes-web.sh"
-  exit 1
-fi
+# Проверка /dev/tty перенесена ниже — она нужна только если хоть один ответ
+# придётся спрашивать у человека. В не-интерактивном режиме (все значения
+# переданы через переменные окружения оркестратором) терминал не требуется.
 
 # Hermes должен быть уже установлен под пользователем hermes (глава 2.1)
 if ! id hermes >/dev/null 2>&1; then
@@ -123,9 +120,30 @@ case "${SERVER_IP:-}" in
 esac
 
 # --- Опрос пользователя -----------------------------------------------------
-DOMAIN="${1:-}"
-LOGIN="${2:-}"
+# Значения берём в приоритете: позиционный аргумент -> переменная окружения ->
+# интерактивный вопрос. Оркестратор install-hermes-unattended.sh передаёт всё
+# через окружение (DOMAIN, PANEL_USER, PANEL_PASS, EMAIL), поэтому в его случае
+# ни одного вопроса не задаётся.
+DOMAIN="${1:-${DOMAIN:-}}"
+LOGIN="${2:-${PANEL_USER:-}}"
+PASSWORD="${PANEL_PASS:-}"
+EMAIL="${EMAIL:-}"
 USING_AUTO_DOMAIN=""
+
+# Не-интерактивный режим: всё, что иначе пришлось бы спрашивать, уже задано.
+NONINTERACTIVE=""
+if [ -n "${DOMAIN:-}" ] && [ -n "${LOGIN:-}" ] && [ -n "${PASSWORD:-}" ]; then
+  NONINTERACTIVE="yes"
+fi
+
+# Терминал нужен только в интерактивном режиме.
+if [ -z "$NONINTERACTIVE" ] && [ ! -e "$TTY" ]; then
+  err "Нет доступа к терминалу (/dev/tty) — скрипту нужно задать тебе вопросы."
+  err "Либо задай DOMAIN, PANEL_USER, PANEL_PASS, EMAIL через окружение,"
+  err "либо скачай скрипт и запусти из файла:"
+  err "  curl -fsSL <URL> -o setup-hermes-web.sh && bash setup-hermes-web.sh"
+  exit 1
+fi
 
 if [ -z "${DOMAIN:-}" ]; then
   echo
@@ -158,21 +176,22 @@ while [ -z "${LOGIN:-}" ]; do
   ask "Логин для входа в веб-интерфейс: " LOGIN
 done
 
-PASSWORD="" PASSWORD2=""
-while : ; do
-  ask_secret "Пароль для входа: " PASSWORD
-  ask_secret "Повтори пароль:   " PASSWORD2
-  if [ -z "$PASSWORD" ]; then
-    warn "Пароль не может быть пустым, попробуй ещё раз."
-  elif [ "$PASSWORD" != "$PASSWORD2" ]; then
-    warn "Пароли не совпали, попробуй ещё раз."
-  else
-    break
-  fi
-done
+if [ -z "$NONINTERACTIVE" ]; then
+  PASSWORD2=""
+  while : ; do
+    ask_secret "Пароль для входа: " PASSWORD
+    ask_secret "Повтори пароль:   " PASSWORD2
+    if [ -z "$PASSWORD" ]; then
+      warn "Пароль не может быть пустым, попробуй ещё раз."
+    elif [ "$PASSWORD" != "$PASSWORD2" ]; then
+      warn "Пароли не совпали, попробуй ещё раз."
+    else
+      break
+    fi
+  done
 
-EMAIL=""
-ask "E-mail для уведомлений Let's Encrypt (можно оставить пустым): " EMAIL
+  ask "E-mail для уведомлений Let's Encrypt (можно оставить пустым): " EMAIL
+fi
 
 echo
 echo "  Домен:  ${BOLD}${DOMAIN}${RESET}"
