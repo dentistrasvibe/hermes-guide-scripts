@@ -34,6 +34,19 @@ require_root_ubuntu() {
 
 run_as_hermes() { su - "$HERMES_HOME_USER" -c "$1"; }
 
+# Run a reused helper script. Prefer a local copy sitting next to this
+# orchestrator (so you can clone the branch and test BEFORE pushing/merging);
+# fall back to fetching the published version from RAW_BASE (main) otherwise.
+run_reused_script() {  # run_reused_script <name> [args...]
+  local name="$1"; shift
+  local local_path="${SCRIPT_DIR}/${name}"
+  if [ -f "$local_path" ]; then
+    bash "$local_path" "$@"
+  else
+    bash <(curl -fsSL "${RAW_BASE}/${name}") "$@"
+  fi
+}
+
 install_hermes_pinned() {
   # PENDING Task 1 live verification — see header comment.
   run_as_hermes "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --branch ${HERMES_VERSION}"
@@ -52,7 +65,7 @@ main() {
   pass="${PANEL_PASS:-$(gen_panel_password)}"
 
   log "preflight"
-  curl -fsSL "${RAW_BASE}/prepare-hermes-server.sh" | bash
+  run_reused_script prepare-hermes-server.sh
 
   log "install hermes ${HERMES_VERSION}"
   install_hermes_pinned
@@ -83,8 +96,10 @@ main() {
   run_as_hermes "hermes gateway install --system" || hermes gateway install --system
 
   log "web panel"
-  PANEL_USER=hermes PANEL_PASS="$pass" DOMAIN="$domain" EMAIL="$PANEL_EMAIL" \
-    bash <(curl -fsSL "${RAW_BASE}/setup-hermes-web.sh")
+  # Export so the values reach the child bash even through run_reused_script
+  # (a function — an inline `VAR=x func` prefix would not propagate reliably).
+  export PANEL_USER=hermes PANEL_PASS="$pass" DOMAIN="$domain" EMAIL="$PANEL_EMAIL"
+  run_reused_script setup-hermes-web.sh
 
   log "hermes update"
   run_as_hermes "hermes update" || true   # Task 1 decides whether update un-pins
