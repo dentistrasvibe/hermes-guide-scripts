@@ -37,3 +37,14 @@ validate_required_env() {
   fi
   return 0
 }
+
+# build_telegram_env_lines <token> <users_csv> [group_chats_csv]
+# Emits .env lines for the Telegram gateway. Group line only if arg present.
+build_telegram_env_lines() {
+  local token="$1" users="$2" groups="${3:-}"
+  printf 'TELEGRAM_BOT_TOKEN=%s\n' "$token"
+  printf 'TELEGRAM_ALLOWED_USERS=%s\n' "$users"
+  if [ -n "$groups" ]; then
+    printf 'TELEGRAM_GROUP_ALLOWED_CHATS=%s\n' "$groups"
+  fi
+}

@@ -32,3 +32,16 @@ setup() {
   OPENROUTER_API_KEY="sk-or-1" run validate_required_env "v0.14.0" "a@b.c" "tok" "111" "openrouter"
   [ "$status" -eq 0 ]
 }
+
+@test "build_telegram_env_lines: emits token and CSV users" {
+  run build_telegram_env_lines "123:ABC" "111,222"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TELEGRAM_BOT_TOKEN=123:ABC"* ]]
+  [[ "$output" == *"TELEGRAM_ALLOWED_USERS=111,222"* ]]
+}
+
+@test "build_telegram_env_lines: supergroup -100 id preserved in group chats" {
+  run build_telegram_env_lines "123:ABC" "111" "-100999"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TELEGRAM_GROUP_ALLOWED_CHATS=-100999"* ]]
+}
