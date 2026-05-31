@@ -48,3 +48,9 @@ build_telegram_env_lines() {
     printf 'TELEGRAM_GROUP_ALLOWED_CHATS=%s\n' "$groups"
   fi
 }
+
+# gen_panel_password — 24 url-safe chars from the system CSPRNG.
+gen_panel_password() {
+  LC_ALL=C tr -dc 'A-Za-z0-9_-' < /dev/urandom | head -c 24
+  printf '\n'
+}

@@ -45,3 +45,15 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"TELEGRAM_GROUP_ALLOWED_CHATS=-100999"* ]]
 }
+
+@test "gen_panel_password: returns 24+ url-safe chars" {
+  run gen_panel_password
+  [ "$status" -eq 0 ]
+  [ "${#output}" -ge 24 ]
+  [[ "$output" =~ ^[A-Za-z0-9_-]+$ ]]
+}
+
+@test "gen_panel_password: two calls differ" {
+  a="$(gen_panel_password)"; b="$(gen_panel_password)"
+  [ "$a" != "$b" ]
+}
