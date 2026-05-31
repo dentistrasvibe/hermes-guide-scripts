@@ -77,3 +77,19 @@ provider_config_commands() {
     *) printf 'unknown provider: %s\n' "$provider" >&2; return 1 ;;
   esac
 }
+
+# healthcheck_dashboard <port> [curl_fn]
+# curl_fn echoes an HTTP status code for http://127.0.0.1:<port>/.
+# Default probes the real localhost dashboard. Returns 0 if 2xx/3xx/401.
+healthcheck_dashboard() {
+  local port="$1" curl_fn="${2:-_real_curl_status}"
+  local code; code="$("$curl_fn" "$port")"
+  case "$code" in
+    2??|3??|401) return 0 ;;   # 401 = nginx Basic Auth up = dashboard reachable
+    *) printf 'dashboard healthcheck got HTTP %s\n' "$code" >&2; return 1 ;;
+  esac
+}
+
+_real_curl_status() {
+  curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:$1/" || echo "000"
+}

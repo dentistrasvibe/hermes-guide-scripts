@@ -78,3 +78,15 @@ setup() {
   [[ "$output" == *"config set model.provider openrouter"* ]]
   [[ "$output" == *"config set model.default anthropic/claude-opus-4.6"* ]]
 }
+
+@test "healthcheck_dashboard: 200 -> ok" {
+  fake_curl() { echo "200"; }
+  run healthcheck_dashboard 9119 fake_curl
+  [ "$status" -eq 0 ]
+}
+
+@test "healthcheck_dashboard: 000 (down) -> fail" {
+  fake_curl() { echo "000"; }
+  run healthcheck_dashboard 9119 fake_curl
+  [ "$status" -ne 0 ]
+}
