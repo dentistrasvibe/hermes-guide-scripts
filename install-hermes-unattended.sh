@@ -75,6 +75,20 @@ main() {
   log "install hermes ${HERMES_VERSION}"
   install_hermes_pinned
 
+  log "browser system libs (playwright)"
+  # install.sh runs as hermes and can't apt-install Chromium's system libraries
+  # (--with-deps), so the agent's headless-browser tool won't launch. We are root
+  # here: run the project's playwright with hermes's node on PATH so it installs
+  # the right libs for this Ubuntu version. Best-effort — never fail the install.
+  node_bin_dir="$(run_as_hermes 'command -v node' 2>/dev/null | xargs -r dirname 2>/dev/null || true)"
+  if [ -n "${node_bin_dir:-}" ]; then
+    ( cd "/home/${HERMES_HOME_USER}/.hermes/hermes-agent" \
+        && PATH="${node_bin_dir}:${PATH}" npx --yes playwright install-deps chromium ) \
+      || echo "WARNING: playwright install-deps failed — browser tool may need libs (re-run as root later)."
+  else
+    echo "WARNING: node not found for ${HERMES_HOME_USER}; skipping browser system libs."
+  fi
+
   log "write provider .env"
   install -d -o "$HERMES_HOME_USER" -g "$HERMES_HOME_USER" "/home/${HERMES_HOME_USER}/.hermes"
   {
