@@ -57,6 +57,11 @@ main() {
 
   require_root_ubuntu
 
+  # Tell the reused scripts they run unattended: suppress their guide-oriented
+  # closing plates (hermes-user password card, "return to the guide" pointers).
+  # P2 streams its own ::step:: / ::done:: events to the browser instead.
+  export HERMES_UNATTENDED=1
+
   validate_required_env "${HERMES_VERSION:-}" \
     "${TELEGRAM_BOT_TOKEN:-}" "${TELEGRAM_ALLOWED_USERS:-}" "${PROVIDER:-}"
 
