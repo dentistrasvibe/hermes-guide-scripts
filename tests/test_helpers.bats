@@ -63,10 +63,17 @@ setup() {
   [ "$a" != "$b" ]
 }
 
-@test "provider_config_commands: openai-codex sets provider only" {
+@test "provider_config_commands: openai-codex sets provider and default model" {
   run provider_config_commands "openai-codex"
   [ "$status" -eq 0 ]
   [[ "$output" == *"config set model.provider openai-codex"* ]]
+  [[ "$output" == *"config set model.default gpt-5.5"* ]]
+}
+
+@test "provider_config_commands: openai-codex respects CODEX_MODEL override" {
+  CODEX_MODEL="gpt-5" run provider_config_commands "openai-codex"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"config set model.default gpt-5"* ]]
 }
 
 @test "provider_config_commands: custom sets provider, base_url, default" {

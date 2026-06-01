@@ -60,12 +60,15 @@ gen_panel_password() {
 # provider_config_commands <provider>
 # Emits the `hermes config set ...` argument strings (one per line) for the
 # given provider. API keys are NOT set here — they go into ~/.hermes/.env.
-# NOTE: model key is `model.default` per research; Task 9 live-verifies vs `model.model`.
+# NOTE: model key is `model.default` (confirmed live 2026-06-01, not `model.model`).
+# openai-codex needs an explicit model.default too — without it the agent has no
+# model to call and fails at first use ("model provider failed after retries").
 provider_config_commands() {
   local provider="$1"
   case "$provider" in
     openai-codex)
       printf 'config set model.provider openai-codex\n'
+      printf 'config set model.default %s\n' "${CODEX_MODEL:-gpt-5.5}"
       ;;
     openrouter)
       printf 'config set model.provider openrouter\n'
