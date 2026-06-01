@@ -86,12 +86,22 @@ setup() {
 
 @test "healthcheck_dashboard: 200 -> ok" {
   fake_curl() { echo "200"; }
-  run healthcheck_dashboard 9119 fake_curl
+  run healthcheck_dashboard 9119 fake_curl 1 0
   [ "$status" -eq 0 ]
 }
 
 @test "healthcheck_dashboard: 000 (down) -> fail" {
   fake_curl() { echo "000"; }
-  run healthcheck_dashboard 9119 fake_curl
+  run healthcheck_dashboard 9119 fake_curl 1 0
   [ "$status" -ne 0 ]
+}
+
+@test "healthcheck_dashboard: retries then succeeds" {
+  # fail twice, then 200 — proves the poll loop retries instead of one-shot.
+  # File-based counter because curl_fn runs in a command-substitution subshell.
+  cnt="$(mktemp)"; echo 0 > "$cnt"
+  fake_curl() { local n; n=$(( $(cat "$cnt") + 1 )); echo "$n" > "$cnt"; if [ "$n" -ge 3 ]; then echo 200; else echo 000; fi; }
+  run healthcheck_dashboard 9119 fake_curl 5 0
+  rm -f "$cnt"
+  [ "$status" -eq 0 ]
 }

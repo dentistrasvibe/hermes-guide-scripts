@@ -80,16 +80,22 @@ provider_config_commands() {
   esac
 }
 
-# healthcheck_dashboard <port> [curl_fn]
+# healthcheck_dashboard <port> [curl_fn] [retries] [sleep_s]
 # curl_fn echoes an HTTP status code for http://127.0.0.1:<port>/.
-# Default probes the real localhost dashboard. Returns 0 if 2xx/3xx/401.
+# Polls up to <retries> times (default 20, 2s apart) because the dashboard
+# (esp. with --tui) takes a few seconds to start. Returns 0 if 2xx/3xx/401.
 healthcheck_dashboard() {
-  local port="$1" curl_fn="${2:-_real_curl_status}"
-  local code; code="$("$curl_fn" "$port")"
-  case "$code" in
-    2??|3??|401) return 0 ;;   # 401 = nginx Basic Auth up = dashboard reachable
-    *) printf 'dashboard healthcheck got HTTP %s\n' "$code" >&2; return 1 ;;
-  esac
+  local port="$1" curl_fn="${2:-_real_curl_status}" retries="${3:-20}" sleep_s="${4:-2}"
+  local code="" i
+  for i in $(seq 1 "$retries"); do
+    code="$("$curl_fn" "$port")"
+    case "$code" in
+      2??|3??|401) return 0 ;;   # 401 = nginx Basic Auth up = dashboard reachable
+    esac
+    [ "$i" -lt "$retries" ] && sleep "$sleep_s"
+  done
+  printf 'dashboard healthcheck got HTTP %s\n' "$code" >&2
+  return 1
 }
 
 _real_curl_status() {

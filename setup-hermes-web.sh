@@ -208,10 +208,23 @@ ok "nginx и certbot установлены."
 # --- 2/5. Постоянный сервис для web-интерфейса ------------------------------
 step "2/5. Делаю web-интерфейс постоянным сервисом..."
 
+# Веб-интерфейс нужно один раз собрать (npm), иначе dashboard с --skip-build
+# падает в крэш-луп ("no web dist found at .../hermes_cli/web_dist"). Собираем
+# ОТ ИМЕНИ hermes (у него node/npm в PATH через login-shell), один раз —
+# идемпотентно: если dist уже есть, пропускаем. (Прежде считалось, что dist
+# собирает `hermes update`, но он его не собирает — выяснено на live-прогоне.)
+HERMES_WEB_SRC="/home/hermes/.hermes/hermes-agent/web"
+HERMES_WEB_DIST="/home/hermes/.hermes/hermes-agent/hermes_cli/web_dist"
+if [ ! -d "$HERMES_WEB_DIST" ] && [ -d "$HERMES_WEB_SRC" ]; then
+  step "   Собираю веб-интерфейс (npm — пара минут, один раз)..."
+  su - hermes -c "cd '$HERMES_WEB_SRC' && npm install && npm run build"
+  ok "Веб-интерфейс собран."
+fi
+
 # Системный сервис, но процесс работает ОТ ИМЕНИ hermes (не root).
 # --tui        — включает вкладку чата прямо в браузере (через WebSocket)
-# --skip-build — отдаёт уже собранный интерфейс (его собрал 'hermes update' в 2.1),
-#                чтобы сервису не требовался npm при старте
+# --skip-build — отдаёт собранный выше dist, чтобы сервису не требовался npm
+#                при каждом старте
 # host 127.0.0.1 — слушает только локально; наружу смотрит только nginx
 cat > /etc/systemd/system/hermes-dashboard.service <<EOF
 [Unit]
