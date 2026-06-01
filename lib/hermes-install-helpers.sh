@@ -12,14 +12,16 @@ derive_panel_domain() {
   printf '%s.sslip.io\n' "${ip//./-}"
 }
 
-# validate_required_env <version> <email> <tg_token> <tg_users> <provider>
+# validate_required_env <version> <tg_token> <tg_users> <provider>
 # Reads provider-specific keys from the environment. Prints the name of the
 # first missing var to stderr and returns 1; returns 0 if all present.
+# Note: PANEL_EMAIL is optional — without it the web-setup registers the
+# Let's Encrypt cert with --register-unsafely-without-email. PANEL_DOMAIN is
+# optional too (empty -> auto <ip>.sslip.io via derive_panel_domain).
 validate_required_env() {
-  local version="$1" email="$2" tg_token="$3" tg_users="$4" provider="$5"
+  local version="$1" tg_token="$2" tg_users="$3" provider="$4"
   local missing=""
   [ -z "$version" ]  && missing="HERMES_VERSION"
-  [ -z "$email" ]    && missing="${missing:-PANEL_EMAIL}"
   [ -z "$tg_token" ] && missing="${missing:-TELEGRAM_BOT_TOKEN}"
   [ -z "$tg_users" ] && missing="${missing:-TELEGRAM_ALLOWED_USERS}"
   case "$provider" in

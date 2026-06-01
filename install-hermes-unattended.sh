@@ -57,7 +57,7 @@ main() {
 
   require_root_ubuntu
 
-  validate_required_env "${HERMES_VERSION:-}" "${PANEL_EMAIL:-}" \
+  validate_required_env "${HERMES_VERSION:-}" \
     "${TELEGRAM_BOT_TOKEN:-}" "${TELEGRAM_ALLOWED_USERS:-}" "${PROVIDER:-}"
 
   ip="$(curl -fsSL --max-time 5 https://api.ipify.org)"
@@ -98,7 +98,7 @@ main() {
   log "web panel"
   # Export so the values reach the child bash even through run_reused_script
   # (a function — an inline `VAR=x func` prefix would not propagate reliably).
-  export PANEL_USER=hermes PANEL_PASS="$pass" DOMAIN="$domain" EMAIL="$PANEL_EMAIL"
+  export PANEL_USER=hermes PANEL_PASS="$pass" DOMAIN="$domain" EMAIL="${PANEL_EMAIL:-}"
   run_reused_script setup-hermes-web.sh
 
   log "hermes update"
