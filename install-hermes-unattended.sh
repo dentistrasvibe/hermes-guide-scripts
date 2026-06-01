@@ -98,7 +98,14 @@ main() {
   fi
 
   log "telegram gateway service"
-  run_as_hermes "hermes gateway install --system" || hermes gateway install --system
+  # `hermes gateway install` asks two yes/no prompts (start now? / enable on
+  # boot?) that have NO skip-flag on Linux; over our PTY it blocks on stdin and
+  # hangs. Feed empty lines to accept both defaults (yes/yes). Install a *user*
+  # service as hermes — linger (enabled in preflight 4/4) keeps it alive across
+  # logout/reboot, and everything stays under /home/hermes/.hermes. A --system
+  # unit would need root + --run-as-user and risks resolving config from /root.
+  hermes_uid="$(id -u "$HERMES_HOME_USER")"
+  run_as_hermes "export XDG_RUNTIME_DIR=/run/user/${hermes_uid}; export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${hermes_uid}/bus; printf '\n\n\n' | hermes gateway install"
 
   log "web panel"
   # Export so the values reach the child bash even through run_reused_script
@@ -107,7 +114,9 @@ main() {
   run_reused_script setup-hermes-web.sh
 
   log "hermes update"
-  run_as_hermes "hermes update" || true   # Task 1 decides whether update un-pins
+  # </dev/null so that if `hermes update` prompts, it exits cleanly (we stay on
+  # the pinned tag) instead of hanging on stdin over the PTY. || true: best-effort.
+  run_as_hermes "hermes update </dev/null" || true
 
   log "healthcheck"
   healthcheck_dashboard 9119
