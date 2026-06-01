@@ -17,24 +17,24 @@ setup() {
 }
 
 @test "validate_required_env: missing TELEGRAM_BOT_TOKEN fails with message" {
-  run validate_required_env "v0.14.0" "" "111" "openrouter"
+  run validate_required_env "v2026.5.29.2" "" "111" "openrouter"
   [ "$status" -ne 0 ]
   [[ "$output" == *"TELEGRAM_BOT_TOKEN"* ]]
 }
 
 @test "validate_required_env: passes without an email (email is optional)" {
-  OPENROUTER_API_KEY="sk-or-1" run validate_required_env "v0.14.0" "tok" "111" "openrouter"
+  OPENROUTER_API_KEY="sk-or-1" run validate_required_env "v2026.5.29.2" "tok" "111" "openrouter"
   [ "$status" -eq 0 ]
 }
 
 @test "validate_required_env: openrouter without key fails" {
-  OPENROUTER_API_KEY="" run validate_required_env "v0.14.0" "tok" "111" "openrouter"
+  OPENROUTER_API_KEY="" run validate_required_env "v2026.5.29.2" "tok" "111" "openrouter"
   [ "$status" -ne 0 ]
   [[ "$output" == *"OPENROUTER_API_KEY"* ]]
 }
 
 @test "validate_required_env: complete openrouter passes" {
-  OPENROUTER_API_KEY="sk-or-1" run validate_required_env "v0.14.0" "tok" "111" "openrouter"
+  OPENROUTER_API_KEY="sk-or-1" run validate_required_env "v2026.5.29.2" "tok" "111" "openrouter"
   [ "$status" -eq 0 ]
 }
 
