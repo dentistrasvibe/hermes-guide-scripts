@@ -137,7 +137,15 @@ main() {
   log "healthcheck"
   healthcheck_dashboard 9119
 
-  printf '\n::done:: panel=https://%s login=hermes password=%s\n' "$domain" "$pass"
+  # Report the scheme that actually works. certbot may have failed (DNS not
+  # propagated, port 80 blocked, Let's Encrypt rate limit / outage) — then only
+  # http is served, and a hardcoded https link would look like the whole install
+  # failed. Probe the live https endpoint; fall back to http.
+  panel_scheme="http"
+  if curl -sk --max-time 5 -o /dev/null "https://${domain}/" 2>/dev/null; then
+    panel_scheme="https"
+  fi
+  printf '\n::done:: panel=%s://%s login=hermes password=%s\n' "$panel_scheme" "$domain" "$pass"
 }
 
 main "$@"
