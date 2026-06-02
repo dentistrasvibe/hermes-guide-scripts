@@ -101,10 +101,12 @@ main() {
   chown "$HERMES_HOME_USER:$HERMES_HOME_USER" "/home/${HERMES_HOME_USER}/.hermes/.env"
   chmod 600 "/home/${HERMES_HOME_USER}/.hermes/.env"
 
-  log "configure provider"
-  while IFS= read -r args; do
-    [ -n "$args" ] && run_as_hermes "hermes $args"
-  done < <(provider_config_commands "$PROVIDER")
+  if [ "${PROVIDER}" != "none" ]; then
+    log "configure provider"
+    while IFS= read -r args; do
+      [ -n "$args" ] && run_as_hermes "hermes $args"
+    done < <(provider_config_commands "$PROVIDER")
+  fi
 
   if [ "$PROVIDER" = "openai-codex" ]; then
     log "oauth: hermes auth add openai-codex (interactive — driven by caller/P2)"
