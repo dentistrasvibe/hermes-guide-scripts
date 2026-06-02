@@ -26,6 +26,7 @@ validate_required_env() {
   [ -z "$tg_users" ] && missing="${missing:-TELEGRAM_ALLOWED_USERS}"
   case "$provider" in
     openai-codex) : ;;
+    none)         : ;;   # "connect a model later" — no provider keys needed
     openrouter)   [ -z "${OPENROUTER_API_KEY:-}" ] && missing="${missing:-OPENROUTER_API_KEY}" ;;
     custom)
       [ -z "${CUSTOM_BASE_URL:-}" ] && missing="${missing:-CUSTOM_BASE_URL}"
@@ -66,6 +67,9 @@ gen_panel_password() {
 provider_config_commands() {
   local provider="$1"
   case "$provider" in
+    none)
+      # "connect a model later": install Hermes + panel + Telegram, no model set.
+      : ;;
     openai-codex)
       printf 'config set model.provider openai-codex\n'
       printf 'config set model.default %s\n' "${CODEX_MODEL:-gpt-5.5}"

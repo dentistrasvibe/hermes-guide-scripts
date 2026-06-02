@@ -91,6 +91,17 @@ setup() {
   [[ "$output" == *"config set model.default anthropic/claude-opus-4.6"* ]]
 }
 
+@test "validate_required_env accepts provider=none with no keys" {
+  run validate_required_env "v2026.5.29.2" "123:ABC" "111" "none"
+  [ "$status" -eq 0 ]
+}
+
+@test "provider_config_commands none emits nothing" {
+  run provider_config_commands "none"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "healthcheck_dashboard: 200 -> ok" {
   fake_curl() { echo "200"; }
   run healthcheck_dashboard 9119 fake_curl 1 0
