@@ -111,6 +111,15 @@ main() {
   if [ "$PROVIDER" = "openai-codex" ]; then
     log "oauth: hermes auth add openai-codex (interactive — driven by caller/P2)"
     run_as_hermes "hermes auth add openai-codex"
+    # Re-assert the model config AFTER auth. `hermes auth add openai-codex` writes
+    # codex's own auth/model state and can clobber model.default (set in "configure
+    # provider" above), leaving the agent with no model to call. Re-running the
+    # provider config restores model.provider + model.default. Mirrors the
+    # standalone connect flow (runner.build_connect_command), which sets the model
+    # only after auth for the same reason.
+    while IFS= read -r args; do
+      [ -n "$args" ] && run_as_hermes "hermes $args"
+    done < <(provider_config_commands "$PROVIDER")
   fi
 
   log "telegram gateway service"
