@@ -17,6 +17,12 @@ ok()   { echo "  ${GREEN}✓${RESET} $1"; }
 warn() { echo "  ${YELLOW}⚠${RESET} $1"; }
 err()  { echo "  ${RED}✗${RESET} $1" >&2; }
 
+# apt-get, но ждём блокировку пакетов до 5 минут вместо мгновенного падения.
+# Свежесозданный VPS при первой загрузке сам запускает обновление (cloud-init /
+# unattended-upgrades) и держит lock dpkg первые минуту-две — без ожидания наш
+# самый первый вызов apt падает с "E: Could not get lock /var/lib/dpkg/lock-frontend".
+apt_get() { apt-get -o Dpkg::Lock::Timeout=300 "$@"; }
+
 # --- Предварительные проверки -----------------------------------------------
 if [ "${EUID:-$(id -u)}" -ne 0 ]; then
   err "Этот скрипт должен запускаться от имени root."
@@ -36,8 +42,8 @@ echo "Обнаружена ОС: ${OS_PRETTY}"
 # --- 1/4. Обновление системы -------------------------------------------------
 step "1/4. Обновляю систему (это займёт пару минут)..."
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get upgrade -y -qq \
+apt_get update -qq
+apt_get upgrade -y -qq \
   -o Dpkg::Options::="--force-confdef" \
   -o Dpkg::Options::="--force-confold"
 ok "Система обновлена."
@@ -85,7 +91,7 @@ else
   PLAYWRIGHT_DEPS+=(libasound2)
 fi
 
-apt-get install -y -qq "${CORE_DEPS[@]}" "${PLAYWRIGHT_DEPS[@]}"
+apt_get install -y -qq "${CORE_DEPS[@]}" "${PLAYWRIGHT_DEPS[@]}"
 ok "Все зависимости установлены."
 
 # --- 3/4. Создание пользователя hermes --------------------------------------
