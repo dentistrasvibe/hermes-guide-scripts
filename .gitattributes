@@ -1,0 +1,6 @@
+# These scripts run on Linux servers (and via raw.githubusercontent curl|bash).
+# Force LF regardless of a contributor's core.autocrlf so a Windows checkout
+# never ships CRLF — a stray `\r` breaks bash on the target (e.g.
+# `set -euo pipefail\r` -> "set: pipefail: invalid option name", exit 2).
+*.sh text eol=lf
+*.bats text eol=lf
